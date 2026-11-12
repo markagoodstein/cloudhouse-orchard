@@ -195,7 +195,7 @@ code{font-size:.92em;background:var(--line);padding:0 4px;border-radius:4px}
 const DBX_KEY = "bop8no9cvweg2hj";
 const SCOPES = "account_info.read files.metadata.read files.metadata.write files.content.read files.content.write sharing.read";
 const REDIRECT = location.origin + location.pathname.replace(/index\.html$/, "");
-const BUILD = "20261111-1345";
+const BUILD = "20261111-1718";
 
 /* ---------- small helpers ---------- */
 const store = {
@@ -302,7 +302,7 @@ async function finishConnect(code) {
   if (!r.ok) { let m = ""; try { m = (await r.json()).error_description } catch (e) { } throw new Error("Dropbox didn't accept that code" + (m ? ": " + m : ".")) }
   const j = await r.json();
   store.set("dbx:tok", { access: j.access_token, refresh: j.refresh_token, exp: Date.now() + j.expires_in * 1000, account: j.account_id });
-  store.del("dbx:pkce");
+  store.del("dbx:pkce"); store.del("dbx:authurl");
   try { const a = await DBX.rpc("users/get_current_account", null); store.set("dbx:who", { name: a.name && a.name.display_name, email: a.email, account: a.account_id }) } catch (e) { }
 }
 
@@ -527,12 +527,12 @@ function syncTap() { if (SYNC.err && SYNC.err !== "offline") return goSettings()
 /* ---------- CONNECT (first run on each device) ---------- */
 let connectMsg = "";
 function renderConnect() {
-  const tok = DBX.tok(), who = store.get("dbx:who", null), waiting = store.get("dbx:pkce", null) && !store.get("dbx:redirect", false);
+  const tok = DBX.tok(), who = store.get("dbx:who", null), waiting = isStandalone() || (store.get("dbx:pkce", null) && !store.get("dbx:redirect", false));
   let body;
   if (!tok) {
     body = `<section class="card"><h2>1 · Connect Dropbox</h2>
       <p class="small" style="margin-top:0">The orchard's records live in a folder in your Dropbox. This device keeps a full copy so it works with no signal, and sends your changes back when it's online.</p>
-      <button class="btn primary" id="go">Connect Dropbox</button>
+      ${isStandalone() ? `<a class="btn primary" id="golink" target="_blank" rel="noopener" href="#" style="display:inline-flex;align-items:center;text-decoration:none">Connect Dropbox</a>` : `<button class="btn primary" id="go">Connect Dropbox</button>`}
       ${waiting ? `<div class="stack" style="margin-top:14px"><label class="small">Paste the code Dropbox showed you<input id="code" class="search" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Access code"></label><div class="row"><button class="btn primary" id="usecode">Finish connecting</button></div></div>` : ""}
       ${isStandalone() ? `<p class="note">On iPhone, Dropbox opens in Safari. Approve there, copy the code it shows, then come back to this app and paste it.</p>` : ""}
     </section>`;
@@ -549,7 +549,10 @@ function renderConnect() {
     <p class="offline" id="cmsg" aria-live="polite">${esc(connectMsg)}</p>
     <p class="note">The app's code is public; your orchard records stay in your Dropbox and on your devices. Dropbox access can be revoked any time at dropbox.com → Settings → Connected apps.</p>`;
   const msg = t => { connectMsg = t; const el = $("#cmsg"); if (el) el.textContent = t };
-  const go = $("#go"); if (go) go.onclick = async () => { const url = await startConnect(); if (isStandalone()) { window.open(url, "_blank"); renderConnect() } else location.href = url };
+  const go = $("#go"); if (go) go.onclick = async () => { location.href = await startConnect() };
+  // Home-screen app: iOS only opens Safari from a plain link tapped directly, so the link is prepared before the tap.
+  // The same link (and its PKCE verifier) is reused until a code is accepted, so a code from any earlier tap still works.
+  const gl = $("#golink"); if (gl) { (async () => { let url = store.get("dbx:authurl", null); if (!url || !store.get("dbx:pkce", null)) { url = await startConnect(); store.set("dbx:authurl", url) } gl.href = url })(); gl.onclick = e => { if (gl.getAttribute("href") === "#") { e.preventDefault(); return } if (!$("#code")) setTimeout(renderConnect, 300) } }
   const uc = $("#usecode"); if (uc) uc.onclick = async () => { const c = $("#code").value; if (!c.trim()) return; uc.disabled = true; msg("Connecting…"); try { await finishConnect(c); msg(""); route() } catch (e) { uc.disabled = false; msg(e.message) } };
   const dc = $("#disc"); if (dc) dc.onclick = () => disconnect();
   const pick = async disp => { msg("Opening " + disp + " …"); try { await useFolder(disp); msg("Copying the orchard to this device…"); await sync(true); if (M) connectMsg = ""; if (!M) { msg(SYNC.err ? "Couldn't copy: " + SYNC.err : "That folder looks empty.") } else { msg(""); location.hash = "today"; route() } } catch (e) { msg(e.status === 409 ? "No orchard.json in that folder." : e.message) } };
@@ -563,7 +566,7 @@ function renderConnect() {
 async function disconnect() {
   const t = DBX.tok();
   if (t) { try { await fetch("https://api.dropboxapi.com/2/auth/token/revoke", { method: "POST", headers: { Authorization: "Bearer " + t.access } }) } catch (e) { } }
-  ["dbx:tok", "dbx:who", "dbx:root", "dbx:cursor", "dbx:pkce", "sync:last"].forEach(k => store.del(k));
+  ["dbx:tok", "dbx:who", "dbx:root", "dbx:cursor", "dbx:pkce", "dbx:authurl", "sync:last"].forEach(k => store.del(k));
   await idbClear("files"); await idbClear("queue"); FILES.clear(); QUEUE.clear(); M = null; connectMsg = ""; location.hash = ""; route();
 }
 
