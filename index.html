@@ -853,11 +853,11 @@ code{font-size:.92em;background:var(--line);padding:0 4px;border-radius:4px}
 <body>
 <div class="wrap" id="app"><p class="empty">Loading…</p></div>
 <nav class="tabs" hidden aria-label="Sections">
-  <a href="#today" data-tab="today"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M8 3v4M16 3v4M8 14l2.5 2.5L16 12"/></svg>This week</a>
   <a href="#trees" data-tab="trees"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21v-7"/><path d="M12 14c-4.5 0-7-2.6-7-6a7 7 0 0 1 14 0c0 3.4-2.5 6-7 6z"/><path d="M12 14l-3-3M12 11.5l3-2.5"/></svg>Trees</a>
   <a href="#weather" data-tab="weather"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18h10a4 4 0 0 0 .4-8 6 6 0 0 0-11.6 1.5A3.3 3.3 0 0 0 7 18z"/><path d="M9 21l.5-1M13 21l.5-1"/></svg>Weather</a>
   <a href="#map" data-tab="map"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6z"/><path d="M9 4v14M15 6v14"/></svg>Map</a>
-  <a href="#more" data-tab="more"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9M10 19V5M16 19v-7M21 19H3"/></svg>Climate</a>
+  <a href="#guide" data-tab="guide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M8 7h8M8 11h6"/></svg>Guide</a>
+  <a href="#settings" data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</a>
 </nav>
 <script>
 /* @preserve
@@ -874,7 +874,7 @@ code{font-size:.92em;background:var(--line);padding:0 4px;border-radius:4px}
 const DBX_KEY = "bop8no9cvweg2hj";
 const SCOPES = "account_info.read files.metadata.read files.metadata.write files.content.read files.content.write sharing.read";
 const REDIRECT = location.origin + location.pathname.replace(/index\.html$/, "");
-const BUILD = "20261111-2244";
+const BUILD = "20261112-1106";
 
 /* ---------- small helpers ---------- */
 const store = {
@@ -1088,7 +1088,7 @@ async function sync(manual) {
     await pushQueue();
     SYNC.last = Date.now(); store.set("sync:last", SYNC.last);
   } catch (e) { SYNC.err = e instanceof AuthError ? "auth" : (e.message || String(e)); console.warn("sync", e) }
-  finally { SYNC.busy = false; SYNC.progress = null; if (PULLED || !hadModel) { buildModel(); if (!editing() && !(typeof mapMode !== "undefined" && mapMode) && location.hash !== "#new") route() } else if (location.hash === "#more") route(); paintSync(); if (!SYNC.err && M) migrateIfNeeded() }
+  finally { SYNC.busy = false; SYNC.progress = null; if (PULLED || !hadModel) { buildModel(); if (!editing() && !(typeof mapMode !== "undefined" && mapMode) && location.hash !== "#new") route() } else if (location.hash === "#settings") route(); paintSync(); if (!SYNC.err && M) migrateIfNeeded() }
 }
 let syncTimer = null;
 function syncSoon(ms = 3000) { clearTimeout(syncTimer); syncTimer = setTimeout(() => sync(), ms) }
@@ -1191,18 +1191,19 @@ function route() {
   const nav = $("nav.tabs");
   if (!DBX.tok() || !ROOT() || !M) { nav.hidden = true; return renderConnect() }
   nav.hidden = false;
-  const h = (location.hash || "#today").slice(1);
+  let h = (location.hash || "#trees").slice(1);
+  if (h === "today") h = "trees"; if (h === "more") h = store.get("ui:more", "") === "climate" ? "weather" : store.get("ui:more", "") === "guide" ? "guide" : "settings";
   let tab = h.startsWith("tree-") || h === "new" ? "trees" : h;
-  if (!["today", "trees", "weather", "map", "more"].includes(tab)) tab = "today";
+  if (!["trees", "weather", "map", "guide", "settings"].includes(tab)) tab = "trees";
   document.querySelectorAll("nav.tabs a").forEach(a => { if (a.dataset.tab === tab) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current") });
   if (h.startsWith("tree-")) return renderTree(h.slice(5));
   if (h === "new") return renderNew();
-  ({ today: renderToday, trees: renderTrees, weather: renderWeather, map: renderMap, more: renderMore })[tab]();
+  ({ trees: renderTrees, weather: renderWeather, map: renderMap, guide: renderGuide, settings: renderSettingsPage })[tab]();
   paintSync();
 }
 window.addEventListener("hashchange", () => { route(); window.scrollTo(0, 0) });
 function header(sub, title, extra = "") { return `<header class="top"><div><div class="sub">${sub}</div><h1>${esc(title)}</h1></div><div class="row" style="gap:6px;justify-content:flex-end">${extra}<button class="pill" id="syncpill" onclick="syncTap()"></button></div></header>` }
-function goSettings() { store.set("ui:more", "settings"); if (location.hash === "#more") route(); else location.hash = "more" }
+function goSettings() { if (location.hash === "#settings") route(); else location.hash = "settings" }
 function syncTap() { if (SYNC.err && SYNC.err !== "offline") return goSettings(); sync(true) }
 
 /* ---------- CONNECT (first run on each device) ---------- */
@@ -1294,7 +1295,8 @@ async function toggleTask(task, season, on) {
 }
 function renderToday() {
   const t0 = today();
-  if (!WEEKS.length) { app.innerHTML = header("", orchardName()) + `<p class="empty">No weekly tasks in this orchard yet.</p>`; return }
+  const host = $("#weekwrap"); if (!host) return;
+  if (!WEEKS.length) { host.innerHTML = `<p class="empty">No weekly tasks in this orchard yet.</p>`; return }
   const y0 = seasonYear(t0), idx0 = currentWeekIndex(y0);
   if (weekView == null) weekView = { idx: idx0, y: y0 };
   const w = WEEKS[weekView.idx], season = seasonLabel(weekView.y);
@@ -1304,14 +1306,7 @@ function renderToday() {
   const up = upcoming(14);
   const groups = []; for (const e of up) { const k = iso(e.date); let g = groups.find(g => g.k === k); if (!g) groups.push(g = { k, date: e.date, items: [] });
     const base = e.text.replace(/\s*\(.*\)$/, ""); let it = g.items.find(x => x.tag === e.tag && x.base === base); if (!it) g.items.push(it = { tag: e.tag, base, list: [] }); it.list.push(e) }
-  const wx = store.get("wx:last", null), ch = chillSummary();
-  app.innerHTML = header(`${DOW[t0.getDay()]}, ${md(t0)} ${t0.getFullYear()}`, orchardName()) + `
-  <div class="row" style="margin-bottom:12px">
-    ${wx && wx.temp != null ? `<a class="pill info" href="#weather">${Math.round(wx.temp)}°F at ${esc(wx.station)}</a>` : `<a class="pill mute" href="#weather">Weather</a>`}
-    ${frostPill()}
-    ${ch ? `<a class="pill info" href="#weather">${ch.total} chill hr since Nov 1</a>` : ""}
-    ${TREES.some(t => t.todo) ? `<a class="pill bad" href="#trees" onclick="treeCat='Needs details';store.set('ui:cat',treeCat)"><span class="todo"></span>${TREES.filter(t => t.todo).length} tree${TREES.filter(t => t.todo).length > 1 ? "s" : ""} need details</a>` : ""}
-  </div>
+  host.innerHTML = `
   <section class="card" aria-labelledby="wk">
     <div class="week-head">
       <button class="iconbtn" id="wprev" aria-label="Previous week">‹</button>
@@ -1336,16 +1331,28 @@ function renderToday() {
   wireTreeLinks();
 }
 
+function pillsHTML() {
+  const wx = store.get("wx:last", null), ch = chillSummary();
+  return `<div class="row" style="margin-bottom:12px">
+    ${wx && wx.temp != null ? `<a class="pill info" href="#weather">${Math.round(wx.temp)}°F at ${esc(wx.station)}</a>` : `<a class="pill mute" href="#weather">Weather</a>`}
+    ${frostPill()}
+    ${ch ? `<a class="pill info" href="#weather">${ch.total} chill hr since Nov 1</a>` : ""}
+    ${TREES.some(t => t.todo) ? `<a class="pill bad" href="#trees" onclick="treeCat='Needs details';store.set('ui:cat2',treeCat);renderTrees();return false"><span class="todo"></span>${TREES.filter(t => t.todo).length} tree${TREES.filter(t => t.todo).length > 1 ? "s" : ""} need details</a>` : ""}
+  </div>`;
+}
 /* ---------- TREES ---------- */
-let treeQ = store.get("ui:q", ""), treeCat = store.get("ui:cat", "All");
+let treeQ = store.get("ui:q", ""), treeCat = store.get("ui:cat2", "");
 function renderTrees() {
-  app.innerHTML = header(`${TREES.reduce((a, t) => a + (t.qty || 0), 0)} plants · ${TREES.length} entries`, "Trees", `<button class="btn primary" id="addtree">+ Tree</button>`) + `
+  const t0 = today();
+  app.innerHTML = header(`${DOW[t0.getDay()]}, ${md(t0)} ${t0.getFullYear()} · ${TREES.reduce((a, t) => a + (t.qty || 0), 0)} plants`, orchardName(), `<button class="btn primary" id="addtree">+ Tree</button>`) + pillsHTML() + `
   <div id="nearwrap">${nearbyHTML()}</div>
   <input class="search" id="q" type="search" placeholder="Search name, variety or notes" value="${esc(treeQ)}" autocomplete="off" aria-label="Search trees">
-  <div class="chips" role="group" aria-label="Filter by group">${(TREES.some(t => t.todo) ? ["Needs details"] : []).concat(["All", ...CATS]).map(c => `<button class="chip" aria-pressed="${c === treeCat}" data-c="${esc(c)}">${c === "All" ? "" : c === "Needs details" ? `<span class="todo"></span>` : `<span class="dot" style="--c:${color(c)}"></span>`}${esc(c)}${c === "Needs details" ? ` (${TREES.filter(t => t.todo).length})` : ""}</button>`).join("")}</div>
-  <ul class="tlist" id="tl" style="margin-top:8px"></ul>`;
+  <div class="chips" role="group" aria-label="Filter by group">${(TREES.some(t => t.todo) ? ["Needs details"] : []).concat(["All", ...CATS]).map(c => `<button class="chip" aria-pressed="${c === treeCat}" data-c="${esc(c)}">${c === "All" ? `All ${TREES.length}` : ""}${c === "All" ? "" : c === "Needs details" ? `<span class="todo"></span>` : `<span class="dot" style="--c:${color(c)}"></span>`}${c === "All" ? "" : esc(c)}${c === "Needs details" ? ` (${TREES.filter(t => t.todo).length})` : ""}</button>`).join("")}</div>
+  <ul class="tlist" id="tl" style="margin-top:8px"></ul>
+  <div id="weekwrap" style="margin-top:12px"></div>`;
   const draw = () => {
     const q = treeQ.trim().toLowerCase();
+    if (!q && !treeCat) { $("#tl").innerHTML = ""; $("#tl").hidden = true; return } $("#tl").hidden = false;
     const list = TREES.filter(t => (treeCat === "All" || t.cat === treeCat || (treeCat === "Needs details" && t.todo)) && (!q || [t.crop, t.map, t.type, t.poll, t.notes].join(" ").toLowerCase().includes(q)));
     $("#tl").innerHTML = list.length ? list.map(t => { const n = nextEventFor(t); return `<li><button ${treeLink(t)}><span class="nm"><span class="dot" style="--c:${color(t.cat)}"></span>${esc(t.crop)}${t.todo ? ` <span class="todo" title="Details needed"></span>` : ""}${t.qty > 1 ? ` <span class="muted num">×${t.qty}</span>` : ""}</span><span class="mp">${esc(t.map)}</span><span class="rt">${n ? `${esc(n.tag)} ${md(n.date)}` : ""}<br><span class="pill ${fitClass(t.fit)}" style="margin-top:4px">${esc(fitLabel(t))}</span></span></button></li>` }).join("") : `<li class="empty">No trees match “${esc(treeQ)}”.</li>`;
     wireTreeLinks($("#tl"));
@@ -1354,8 +1361,8 @@ function renderTrees() {
   wireNearby(nearUpdate); autoGeo(nearUpdate);
   $("#addtree").onclick = () => { newDraft = null; location.hash = "new" };
   $("#q").oninput = e => { treeQ = e.target.value; store.set("ui:q", treeQ); draw() };
-  app.querySelectorAll(".chip").forEach(b => b.onclick = () => { treeCat = b.dataset.c; store.set("ui:cat", treeCat); app.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", x === b)); draw() });
-  draw();
+  app.querySelectorAll(".chip[data-c]").forEach(b => b.onclick = () => { treeCat = treeCat === b.dataset.c ? "" : b.dataset.c; store.set("ui:cat2", treeCat); app.querySelectorAll(".chip[data-c]").forEach(x => x.setAttribute("aria-pressed", x.dataset.c === treeCat)); draw() });
+  draw(); renderToday();
 }
 const STAGES = ["Yr 1", "Yr 2", "Yr 3", "Mature"];
 function stageN(t, stage) { if (!t.n) return null; const [a, b, c] = t.n; return { "Yr 1": a, "Yr 2": (a + b) / 2, "Yr 3": b, "Mature": c }[stage] }
@@ -1518,10 +1525,13 @@ function chillMarks() {
   if (med) m.push([med, "median"]); return m.sort((a, b) => a[0] - b[0]);
 }
 function renderWeather() {
+  const sub = store.get("ui:wx", "now"), subChips = `<div class="chips" role="group" aria-label="Weather section" style="margin-bottom:10px">${[["now", "Now & forecast"], ["climate", "Climate"]].map(([k, l]) => `<button class="chip" data-w="${k}" aria-pressed="${k === sub}">${l}</button>`).join("")}</div>`;
+  const wireSub = () => app.querySelectorAll("[data-w]").forEach(b => b.onclick = () => { store.set("ui:wx", b.dataset.w); renderWeather() });
+  if (sub === "climate") { app.innerHTML = header("Station records", "Climate") + subChips + climateHTML(); paintSync(); wireSub(); return }
   const s = settings(), w = store.get("wx:last", null), f = store.get("wx:fc", null), ch = chillSummary();
   const age = w ? Math.round((Date.now() - w.time) / 60000) : null, marks = chillMarks(), max = 1300;
   const past = ((M.site.chill || {}).winters || []).slice(-4).map(r => `${r.winter} ${Number(r.novFebHours).toLocaleString()}`).join(" · ");
-  app.innerHTML = header(s.primary ? `${esc(s.primary)}${s.fallback ? ` · fallback ${esc(s.fallback)}` : ""}` : "No station set", "Weather", `<button class="btn" id="refresh" ${s.key && s.primary ? "" : "disabled"}>Refresh</button>`) + `
+  app.innerHTML = header(s.primary ? `${esc(s.primary)}${s.fallback ? ` · fallback ${esc(s.fallback)}` : ""}` : "No station set", "Weather", `<button class="btn" id="refresh" ${s.key && s.primary ? "" : "disabled"}>Refresh</button>`) + subChips + `
   ${!(s.key && s.primary) ? `<section class="card"><h2>Add your Wunderground key</h2><p class="small" style="margin-top:0">Live readings, the 5-day forecast and this winter's chill count need a Wunderground API key. It's kept on this device only, never in the orchard folder.</p><button class="btn primary" id="tokey">Open settings</button></section>` : ""}
   <section class="card" aria-live="polite"><h3>Now</h3>
     ${w ? `<div class="now"><div class="t">${Math.round(w.temp)}°</div><div class="small"><div><b>${esc(w.station)}</b> · ${age < 60 ? age + " min ago" : Math.round(age / 60) + " hr ago"}</div><div>Humidity ${Math.round(w.hum)}% · dew point ${Math.round(w.dew)}°</div><div>Wind ${w.wind} mph ${windDir(w.dir)}, gusts ${w.gust}</div><div>Rain today ${w.rain} in${w.rate ? ` · ${w.rate} in/hr now` : ""}</div></div></div>` : `<p class="muted" style="margin:0">No reading saved yet${s.key ? ". Tap Refresh when you have signal." : "."}</p>`}
@@ -1540,7 +1550,7 @@ function renderWeather() {
     ${[s.primary, s.fallback].filter(Boolean).map((id, i) => `<a href="https://www.wunderground.com/dashboard/pws/${encodeURIComponent(id)}" target="_blank" rel="noopener"><span>${esc(id)}${i ? " (fallback)" : " (main)"}</span><span>Wunderground ↗</span></a>`).join("")}
     ${store.get("wx:geo", null) ? `<a href="https://forecast.weather.gov/MapClick.php?lat=${store.get("wx:geo")[0]}&lon=${store.get("wx:geo")[1]}" target="_blank" rel="noopener"><span>Frost and freeze warnings</span><span>NWS ↗</span></a>` : ""}
   </div></section>`;
-  paintSync();
+  paintSync(); wireSub();
   const msg = $("#wxmsg"), tk = $("#tokey"); if (tk) tk.onclick = goSettings;
   const refresh = async () => { if (!s.key) return; msg.textContent = "Updating…"; try { await fetchCurrent(); try { await fetchForecast() } catch (e) { } renderWeather() } catch (e) { msg.textContent = navigator.onLine ? ("Couldn’t update: " + e.message) : "Offline – showing the last saved reading." } };
   $("#refresh").onclick = refresh;
@@ -1591,24 +1601,18 @@ function chillChart(rows, med) {
   if (med) g += `<line x1="${L}" x2="${W - R}" y1="${y(med)}" y2="${y(med)}" stroke="var(--bad)" stroke-dasharray="4 3"/><text x="${W - R}" y="${y(med) - 4}" text-anchor="end" font-size="10" fill="var(--bad)">median ${med}</text>`;
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" role="img" aria-label="Chill hours per winter at the station">${g}</svg>`;
 }
-function renderMore() {
-  const sec = store.get("ui:more", "climate");
-  app.innerHTML = header("Station records, guide and settings", { climate: "Climate", guide: "Guide", settings: "Settings" }[sec] || "Climate") + `
-  <div class="chips" role="group" aria-label="Section">${[["climate", "Climate"], ["guide", "Guide"], ["settings", "Settings"]].map(([k, l]) => `<button class="chip" data-s="${k}" aria-pressed="${k === sec}">${l}</button>`).join("")}</div>
-  <div id="more" style="margin-top:8px"></div>`;
-  paintSync();
-  app.querySelectorAll("[data-s]").forEach(b => b.onclick = () => { store.set("ui:more", b.dataset.s); renderMore() });
-  const m = $("#more"), C = M.site;
-  if (sec === "climate") {
+function climateHTML() {
+  const C = M.site;
     const ch = C.chill || {}, rows = ch.winters || [];
-    m.innerHTML = `
+    return `
     ${rows.length ? `<section class="card"><h2>Chill hours per winter</h2>${chillChart(rows, ch.medianHours)}<p class="note">${esc(ch.definition || "")}${C.station ? ` · ${esc(C.station.model || "")}` : ""}${ch.note ? ". " + esc(ch.note) : ""}</p>
       <div class="tbl"><table><thead><tr><th>Winter</th><th>Nov–Feb</th><th>Oct–Mar</th><th>Chill portions</th><th>Regional est.</th></tr></thead><tbody>${rows.map(r => `<tr><td>${esc(r.winter)}</td><td>${r.novFebHours ?? "—"}</td><td>${r.octMarHours ?? "—"}</td><td>${r.dynamicPortions ?? "—"}</td><td class="muted">${r.regionalEstimate ?? "—"}</td></tr>`).join("")}</tbody></table></div></section>` : ""}
     ${(C.monthly || []).length ? `<section class="card"><h2>Month by month</h2><div class="tbl"><table><thead><tr><th>Month</th><th>High</th><th>Low</th><th>Rain in</th><th>Frost nights</th><th>Lowest</th><th>Highest</th><th>Days ≥95°</th></tr></thead><tbody>${C.monthly.map(r => `<tr><td>${esc(r.month)}</td><td>${r.avgHighF}</td><td>${r.avgLowF}</td><td>${r.rainIn}</td><td>${r.frostNights}</td><td>${r.lowestF}</td><td>${r.highestF}</td><td>${r.days95F}</td></tr>`).join("")}</tbody></table></div><p class="note">Station averages${C.station && C.station.period ? ", " + esc(C.station.period) : ""} (°F).</p></section>` : ""}
     ${(C.years || []).length ? `<section class="card"><h2>Frost and heat by year</h2><div class="tbl"><table><thead><tr><th>Year</th><th>Last spring frost</th><th>First fall frost</th><th>Winter low °F</th><th>Frost nights</th><th>Rain in</th><th>Hottest</th><th>GDD</th></tr></thead><tbody>${C.years.map(r => `<tr><td>${esc(r.year)}</td><td>${esc(r.lastSpringFrost)}</td><td>${esc(r.firstFallFrost)}</td><td>${esc(r.winterLow)}</td><td>${esc(r.frostNights)}</td><td>${esc(r.rainIn)}</td><td>${esc(r.hottestF)}</td><td>${esc(r.growingDegreeDays ?? "—")}</td></tr>`).join("")}</tbody></table></div><p class="note">Rain is per water year (Oct–Sep); * partial year.</p></section>` : ""}
     ${(C.wind || []).length ? `<section class="card"><h2>Wind</h2><dl class="kv">${C.wind.map(r => `<dt>${esc(r.topic)}</dt><dd><b>${esc(r.value)}</b><div class="small muted">${esc(r.meaning)}</div></dd>`).join("")}</dl></section>` : ""}`;
-  } else if (sec === "guide") {
-    m.innerHTML = `<section class="card guide">${mdToHTML(M.guide || "No guide.md in the orchard folder.")}</section>
+}
+function guideHTML() {
+    return `<section class="card guide">${mdToHTML(M.guide || "No guide.md in the orchard folder.")}</section>
     <section class="card"><h2>Sources</h2><div class="links">
       <a href="https://homeorchard.ucanr.edu/" target="_blank" rel="noopener"><span>UC California Backyard Orchard</span><span>↗</span></a>
       <a href="https://ipm.ucanr.edu/home-and-landscape/" target="_blank" rel="noopener"><span>UC IPM home & garden pests</span><span>↗</span></a>
@@ -1616,8 +1620,9 @@ function renderMore() {
       <a href="https://www.davewilson.com/" target="_blank" rel="noopener"><span>Dave Wilson Nursery</span><span>↗</span></a>
       <a href="https://fruitsandnuts.ucanr.edu/Weather_Services/Chill_Calculators" target="_blank" rel="noopener"><span>UC chill calculators</span><span>↗</span></a>
     </div></section>`;
-  } else renderSettings(m);
 }
+function renderGuide() { app.innerHTML = header("Field guide and sources", "Guide") + guideHTML(); paintSync() }
+function renderSettingsPage() { app.innerHTML = header("Dropbox, this device, weather key", "Settings") + `<div id="more"></div>`; paintSync(); renderSettings($("#more")) }
 function renderSettings(m) {
   const s = settings(), who = store.get("dbx:who", null), r = ROOT(), mem = members(), me = ME();
   m.innerHTML = `
@@ -1663,7 +1668,7 @@ function confirmBtn(b, txt) { if (b.dataset.armed) return true; b.dataset.armed 
   } catch (e) { console.warn("local copy unavailable", e) }
   const u = new URL(location.href), code = u.searchParams.get("code");
   if (code) {
-    history.replaceState(null, "", location.pathname + "#today");
+    history.replaceState(null, "", location.pathname + "#trees");
     try { await finishConnect(code) } catch (e) { connectMsg = e.message }
   } else if (u.searchParams.get("error")) { history.replaceState(null, "", location.pathname); connectMsg = "Dropbox connection was cancelled." }
   buildModel(); route();
