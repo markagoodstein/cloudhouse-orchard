@@ -843,6 +843,7 @@ nav.tabs[hidden]{display:none}
 .mapbtn{width:34px;height:34px;background:#fff;color:#222;font-size:20px;line-height:1;border:2px solid rgba(0,0,0,.2);border-radius:6px;cursor:pointer}
 .droppin{background:none;border:0}
 #pgl label{display:flex;flex-wrap:nowrap;align-items:flex-start;gap:8px;padding:3px 0}#pgl label span{flex:1}
+.todo{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--bad);vertical-align:middle;margin:0 2px}.todocard{border-color:var(--bad)}.todocard h3{color:var(--bad)}
 .btn.sm{min-height:32px;padding:4px 10px;font-size:13px}
 ul.locs{list-style:none;margin:0;padding:0}ul.locs li{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}ul.locs li:last-child{border-bottom:0}
 .leaflet-container{font:inherit;background:#cfd6c8}.leaflet-control-attribution{font-size:10px!important;line-height:1.3}
@@ -873,7 +874,7 @@ code{font-size:.92em;background:var(--line);padding:0 4px;border-radius:4px}
 const DBX_KEY = "bop8no9cvweg2hj";
 const SCOPES = "account_info.read files.metadata.read files.metadata.write files.content.read files.content.write sharing.read";
 const REDIRECT = location.origin + location.pathname.replace(/index\.html$/, "");
-const BUILD = "20261111-2235";
+const BUILD = "20261111-2244";
 
 /* ---------- small helpers ---------- */
 const store = {
@@ -1144,6 +1145,7 @@ function buildModel() {
       timing: (v.feedingGuidance || {}).timing || "", ftype: (v.feedingGuidance || {}).products || "", n: n ? [n.year1, n.year3, n.mature] : null,
       harvest: (p.harvest || {}).earliest || null, harvText: (p.harvest || {}).text || "", refHarv: v.referenceHarvest || "", src: ((v.sources || [])[0] || {}).url || "",
       notes: p.careNotes || "", stage: p.ageStage || "Yr 3", feed: progs.find(g => g.kind === "feeding") || null, slurry: progs.find(g => g.kind === "slurry") || null,
+      todo: (p.needsDetails && (p.needsDetails.note || "Details still to fill in")) || (v.needsDetails && (v.needsDetails.note || "Variety details still to fill in")) || null,
       slurryOff: p.overrides && p.overrides.slurry && p.overrides.slurry.use === false ? p.overrides.slurry.reason || "No slurry" : null };
   });
   const byPid = new Map(TREES.map(t => [t.pid, t.id]));
@@ -1308,6 +1310,7 @@ function renderToday() {
     ${wx && wx.temp != null ? `<a class="pill info" href="#weather">${Math.round(wx.temp)}°F at ${esc(wx.station)}</a>` : `<a class="pill mute" href="#weather">Weather</a>`}
     ${frostPill()}
     ${ch ? `<a class="pill info" href="#weather">${ch.total} chill hr since Nov 1</a>` : ""}
+    ${TREES.some(t => t.todo) ? `<a class="pill bad" href="#trees" onclick="treeCat='Needs details';store.set('ui:cat',treeCat)"><span class="todo"></span>${TREES.filter(t => t.todo).length} tree${TREES.filter(t => t.todo).length > 1 ? "s" : ""} need details</a>` : ""}
   </div>
   <section class="card" aria-labelledby="wk">
     <div class="week-head">
@@ -1339,12 +1342,12 @@ function renderTrees() {
   app.innerHTML = header(`${TREES.reduce((a, t) => a + (t.qty || 0), 0)} plants · ${TREES.length} entries`, "Trees", `<button class="btn primary" id="addtree">+ Tree</button>`) + `
   <div id="nearwrap">${nearbyHTML()}</div>
   <input class="search" id="q" type="search" placeholder="Search name, variety or notes" value="${esc(treeQ)}" autocomplete="off" aria-label="Search trees">
-  <div class="chips" role="group" aria-label="Filter by group">${["All", ...CATS].map(c => `<button class="chip" aria-pressed="${c === treeCat}" data-c="${esc(c)}">${c === "All" ? "" : `<span class="dot" style="--c:${color(c)}"></span>`}${esc(c)}</button>`).join("")}</div>
+  <div class="chips" role="group" aria-label="Filter by group">${(TREES.some(t => t.todo) ? ["Needs details"] : []).concat(["All", ...CATS]).map(c => `<button class="chip" aria-pressed="${c === treeCat}" data-c="${esc(c)}">${c === "All" ? "" : c === "Needs details" ? `<span class="todo"></span>` : `<span class="dot" style="--c:${color(c)}"></span>`}${esc(c)}${c === "Needs details" ? ` (${TREES.filter(t => t.todo).length})` : ""}</button>`).join("")}</div>
   <ul class="tlist" id="tl" style="margin-top:8px"></ul>`;
   const draw = () => {
     const q = treeQ.trim().toLowerCase();
-    const list = TREES.filter(t => (treeCat === "All" || t.cat === treeCat) && (!q || [t.crop, t.map, t.type, t.poll, t.notes].join(" ").toLowerCase().includes(q)));
-    $("#tl").innerHTML = list.length ? list.map(t => { const n = nextEventFor(t); return `<li><button ${treeLink(t)}><span class="nm"><span class="dot" style="--c:${color(t.cat)}"></span>${esc(t.crop)}${t.qty > 1 ? ` <span class="muted num">×${t.qty}</span>` : ""}</span><span class="mp">${esc(t.map)}</span><span class="rt">${n ? `${esc(n.tag)} ${md(n.date)}` : ""}<br><span class="pill ${fitClass(t.fit)}" style="margin-top:4px">${esc(fitLabel(t))}</span></span></button></li>` }).join("") : `<li class="empty">No trees match “${esc(treeQ)}”.</li>`;
+    const list = TREES.filter(t => (treeCat === "All" || t.cat === treeCat || (treeCat === "Needs details" && t.todo)) && (!q || [t.crop, t.map, t.type, t.poll, t.notes].join(" ").toLowerCase().includes(q)));
+    $("#tl").innerHTML = list.length ? list.map(t => { const n = nextEventFor(t); return `<li><button ${treeLink(t)}><span class="nm"><span class="dot" style="--c:${color(t.cat)}"></span>${esc(t.crop)}${t.todo ? ` <span class="todo" title="Details needed"></span>` : ""}${t.qty > 1 ? ` <span class="muted num">×${t.qty}</span>` : ""}</span><span class="mp">${esc(t.map)}</span><span class="rt">${n ? `${esc(n.tag)} ${md(n.date)}` : ""}<br><span class="pill ${fitClass(t.fit)}" style="margin-top:4px">${esc(fitLabel(t))}</span></span></button></li>` }).join("") : `<li class="empty">No trees match “${esc(treeQ)}”.</li>`;
     wireTreeLinks($("#tl"));
   };
   const nearUpdate = () => { const w = $("#nearwrap"); if (!w) return; w.innerHTML = nearbyHTML(); wireNearby(nearUpdate) };
@@ -1376,6 +1379,9 @@ function renderTree(pid) {
   app.innerHTML = `
   <div class="row" style="justify-content:space-between"><button class="back" id="back">‹ Trees</button><button class="pill" id="syncpill" onclick="syncTap()"></button></div>
   <header class="top" style="padding-top:0"><div><div class="sub"><span class="dot" style="--c:${color(t.cat)}"></span>${esc(t.cat)} · ${esc(t.map)}${t.qty > 1 ? ` · ${t.qty} plants` : ""}</div><h1>${esc(t.crop)}</h1></div></header>
+  ${t.todo ? `<section class="card todocard"><h3><span class="todo"></span> Details needed</h3><p class="small" style="margin:0">${esc(t.todo)}</p>
+    <p class="note">Ask Claude to research this ${t.v.needsDetails ? "variety" : "tree"} from the same kinds of sources as the others (UC ANR, Dave Wilson, UC IPM) and fill in its fields, or edit them yourself. Then mark it complete.</p>
+    <div class="row"><button class="btn" id="todook">Mark complete</button></div></section>` : ""}
   <section class="card"><h3>At a glance</h3>
     <dl class="kv">
       <dt>Age</dt><dd><select id="stage" class="inline">${STAGES.map(s => `<option ${s === st ? "selected" : ""}>${s}</option>`).join("")}</select></dd>
@@ -1425,6 +1431,10 @@ function renderTree(pid) {
   paintSync();
   $("#back").onclick = () => { if (history.length > 1) history.back(); else location.hash = "trees" };
   wireTreeLocation(t);
+  const tok = $("#todook"); if (tok) tok.onclick = async () => { if (!confirmBtn(tok, "Tap again: details are complete")) return;
+    if (t.p.needsDetails) await editPlanting(t, d => { delete d.needsDetails }, [{ field: "needsDetails", cleared: true }]);
+    const vr = `/varieties/${t.v.id}.json`, vd = (FILES.get(vr) || {}).data; if (vd && vd.needsDetails) { const c = JSON.parse(JSON.stringify(vd)); delete c.needsDetails; await saveRecord(vr, c, [{ field: "needsDetails", cleared: true }]) }
+    renderTree(t.pid) };
   const ta = $("#notes"), sn = $("#savenotes");
   ta.oninput = () => { sn.disabled = ta.value === t.notes };
   sn.onclick = async () => { const v = ta.value.trim(); sn.disabled = true; await editPlanting(t, d => { d.careNotes = v }, [{ field: "careNotes", from: t.notes, to: v }]); t.notes = v; $("#nmsg").textContent = "Saved on this device" + (navigator.onLine ? "; syncing…" : "; will sync when online.") };
@@ -1665,7 +1675,7 @@ function confirmBtn(b, txt) { if (b.dataset.armed) return true; b.dataset.armed 
    Each planting holds its own points in planting.locations, so two people adding pins
    at once never overwrite each other. Points not yet tied to a planting live in
    site/pins.json. map.geojson is regenerated from both as an export. */
-const FORMAT = "1.1";
+const FORMAT = "1.2";
 function slug(s) { return String(s || "").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "x" }
 function locId() { return "loc-" + rid(6) }
 function clone(o) { return JSON.parse(JSON.stringify(o)) }
@@ -1686,7 +1696,9 @@ function buildPins() {
 let migrating = false;
 async function migrateIfNeeded() {
   if (migrating || !M || QUEUE.size || SYNC.err || !navigator.onLine) return;
-  if ((M.orchard.formatVersion || "1.0") !== "1.0") return;
+  const fv = M.orchard.formatVersion || "1.0";
+  if (fv === "1.1") { migrating = true; try { await saveRecord("/schema/planting.schema.json", plantingSchema(), [{ note: "schema 1.2: needsDetails" }], true); await saveRecord("/schema/variety.schema.json", varietySchema(), [{ note: "schema 1.2: needsDetails, basedOn" }], true); const o = clone(M.orchard); o.formatVersion = FORMAT; await saveRecord("/orchard.json", o, [{ field: "formatVersion", from: fv, to: FORMAT }], true); syncSoon(500) } finally { migrating = false } return }
+  if (fv !== "1.0") return;
   const geo = (FILES.get("/map.geojson") || {}).data; if (!geo) return;
   migrating = true;
   try {
@@ -1702,6 +1714,7 @@ async function migrateIfNeeded() {
     const o = clone(M.orchard); o.formatVersion = FORMAT; await saveRecord("/orchard.json", o, [{ field: "formatVersion", from: "1.0", to: FORMAT }], true);
     await saveRecord("/schema/planting.schema.json", plantingSchema(), [{ field: "locations", note: "schema 1.1" }], true);
     await saveRecord("/schema/pins.schema.json", pinsSchema(), [], true);
+    await saveRecord("/schema/variety.schema.json", varietySchema(), [{ note: "schema 1.2" }], true);
     buildModel(); await writeMapExport(true); syncSoon(500);
   } finally { migrating = false }
 }
@@ -1710,8 +1723,11 @@ function plantingSchema() {
   const s = clone((FILES.get("/schema/planting.schema.json") || {}).data || { title: "Planting", type: "object", properties: {} });
   s.properties.locations = { type: "array", description: "Where this planting is: one point per plant or per row end (WGS84). Added in format 1.1.", items: POINT };
   s.properties.status = { enum: ["active", "planned", "removed", "archived"] };
+  s.properties.needsDetails = NEEDS; s.properties.copiedFrom = { type: "string", description: "Planting id this one was copied from" };
   delete s.updatedAt; delete s.updatedBy; return s;
 }
+const NEEDS = { type: "object", description: "Present while facts are still to be filled in; shown as a red dot. Remove it when complete.", properties: { note: { type: "string" }, at: { type: "string", format: "date-time" }, by: { type: "string" } } };
+function varietySchema() { const s = clone((FILES.get("/schema/variety.schema.json") || {}).data || { title: "Variety", type: "object", properties: {} }); s.properties = s.properties || {}; s.properties.needsDetails = NEEDS; s.properties.basedOn = { type: "string", description: "Variety id whose care facts were copied as placeholders" }; delete s.updatedAt; delete s.updatedBy; return s }
 function pinsSchema() { return { $schema: "https://json-schema.org/draft/2020-12/schema", title: "Map points not tied to a single planting", type: "object", required: ["id", "type", "pins"], properties: { id: { type: "string" }, type: { const: "pins" }, pins: { type: "array", items: { ...POINT, properties: { ...POINT.properties, kind: { enum: ["unassigned", "reference", "landmark"] }, candidates: { type: "array", items: { type: "string" }, description: "Planting ids this point might belong to" } } } } } } }
 let exportTimer = null;
 async function writeMapExport(now) {
@@ -1898,13 +1914,16 @@ function renderNew() {
     <div class="row" style="margin-top:8px"><button type="button" class="btn" id="ngps">${d.loc ? "Redo with GPS" : "Use GPS here"}</button><button type="button" class="btn" id="nmap">${d.loc ? "Change on map" : "Place on map"}</button></div><p class="small muted" id="ngmsg"></p>
   </section>
   <section class="card"><h3>What it is</h3>
-    <label class="small">Variety<select id="vsel" class="search">${src ? "" : `<option value="">Choose…</option>`}${vars.map(v => `<option value="${esc(v.id)}" ${v0 && v0.id === v.id ? "selected" : ""}>${esc(v.name)}${v.group ? " · " + esc(v.group) : ""}</option>`).join("")}<option value="__new">+ New variety…</option></select></label>
+    <label class="small row" style="gap:8px;flex-wrap:nowrap;margin-bottom:10px"><input type="checkbox" id="n-later" style="width:20px;height:20px;accent-color:var(--accent);flex:none"> <span>Fill in the details later. Only a name is needed now; the tree gets a <span class="todo"></span> until it's complete.</span></label>
+    <label class="small" id="n-later-note-wrap" hidden>What's still unknown? (optional)<input id="n-later-note" class="search" placeholder="e.g. variety name on the nursery tag"></label>
+    <label class="small">Variety<select id="vsel" class="search">${src ? "" : `<option value="">Choose…</option>`}<option value="__new">+ New variety…</option>${src ? "" : `<option value="__unknown">Not sure yet</option>`}<option disabled>──────────</option>${vars.map(v => `<option value="${esc(v.id)}" ${v0 && v0.id === v.id ? "selected" : ""}>${esc(v.name)}${v.group ? " · " + esc(v.group) : ""}</option>`).join("")}</select></label>
     <div id="nv" class="stack" hidden style="margin-top:10px">
       <label class="small">Variety name<input id="nv-name" class="search" placeholder="e.g. Peach – Indian Free"></label>
+      <label class="small">Similar to (copies its care facts for now)<select id="nv-like" class="search"><option value="">Nothing similar</option><option disabled>──────────</option>${vars.map(v => `<option value="${esc(v.id)}">${esc(v.name)}</option>`).join("")}</select></label>
       <div class="row"><label class="small" style="flex:1;min-width:150px">Group<select id="nv-group" class="search">${GROUPS.map(g => `<option>${esc(g)}</option>`).join("")}<option>Other</option></select></label><label class="small" style="flex:1;min-width:150px">Plant type<input id="nv-type" class="search" placeholder="e.g. Deciduous fruit tree"></label></div>
       <div class="row"><label class="small" style="flex:1;min-width:150px">Chill need (hours)<input id="nv-chill" class="search" inputmode="numeric" placeholder="e.g. 600"></label><label class="small" style="flex:1;min-width:150px">Pollination<input id="nv-poll" class="search" placeholder="e.g. Self-fruitful"></label></div>
       <label class="small">Source link<input id="nv-src" class="search" type="url" placeholder="https://…"></label>
-      <p class="note">Claude can fill in the rest of a new variety's facts (feeding, frost, soil) from authoritative sources later.</p>
+      <p class="note">A new variety is always marked <span class="todo"></span> until its facts are checked. Claude can research and fill them in from the same kinds of sources as your other trees.</p>
     </div>
     <label class="small" style="margin-top:10px">Name<input id="n-name" class="search" required value="${esc(src ? src.name : "")}"></label>
     <div class="row"><label class="small" style="flex:1;min-width:110px">How many<input id="n-count" class="search" type="number" min="1" value="1" inputmode="numeric"></label>
@@ -1938,21 +1957,36 @@ function renderNew() {
     }
   };
   $("#nv-name").oninput = e => { if (!nameTouched) nm.value = e.target.value };
+  const suggest = v => { if (src || !v) return; const sib = M.plantings.filter(p => p.varietyId === v.id), grp = sib.length ? sib : M.plantings.filter(p => (M.varieties[p.varietyId] || {}).group === v.group);
+    const cnt = new Map(); grp.forEach(p => (p.programIds || []).forEach(id => cnt.set(id, (cnt.get(id) || 0) + 1)));
+    const pick = new Set(); for (const kind of ["feeding", "slurry"]) { const best = [...cnt.entries()].filter(([id]) => (M.programs[id] || {}).kind === kind).sort((a, b) => b[1] - a[1])[0]; if (best) pick.add(best[0]) }
+    $("#pgl").querySelectorAll("input").forEach(c => c.checked = pick.has(c.value)); $("#pghint").textContent = pick.size ? `Suggested from ${esc(v.name)} and similar plantings. Change if needed.` : "No usual plan for this variety yet; choose one or leave blank." };
+  $("#nv-like").onchange = e => { const v = M.varieties[e.target.value]; if (v) { $("#nv-group").value = GROUPS.includes(v.group) ? v.group : "Other"; if (!$("#nv-type").value) $("#nv-type").value = v.plantType || ""; suggest(v) } };
+  const later = $("#n-later"); later.onchange = () => { $("#n-later-note-wrap").hidden = !later.checked };
   const gb = $("#ngps"); gb.onclick = async () => { try { const pt = await gpsUI(gb, $("#ngmsg")); newDraft = { ...(newDraft || {}), loc: pt }; keepForm(); renderNew(); restoreForm() } catch (e) { gb.disabled = false; gb.textContent = "Use GPS here"; $("#ngmsg").textContent = e.message } };
   $("#nmap").onclick = () => { keepForm(); mapFocus = { add: true }; location.hash = "map" };
   restoreForm();
   $("#nf").onsubmit = async e => {
     e.preventDefault(); const b = $("#nsave"), msg = $("#nmsg2");
     let vid = vsel.value;
-    if (!vid) { msg.textContent = "Choose a variety, or add a new one."; return }
+    const isLater = $("#n-later").checked, laterNote = $("#n-later-note").value.trim();
+    if (!vid && isLater) vid = "__unknown";
+    if (!vid) { msg.textContent = "Choose a variety, add a new one, or tick “Fill in the details later”."; return }
+    if (vid === "__unknown" && !nm.value.trim()) { msg.textContent = "Give it a name, even a rough one (e.g. “Peach by the gate”)."; return }
     const harv = $("#n-harv").value.trim(); if (harv && !/^(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/.test(harv)) { msg.textContent = "Earliest harvest should look like 07-15."; return }
     b.disabled = true; msg.textContent = "Saving…";
     const now = new Date().toISOString();
-    if (vid === "__new") {
-      const name = $("#nv-name").value.trim(); if (!name) { b.disabled = false; msg.textContent = "Give the new variety a name."; return }
+    if (vid === "__new" || vid === "__unknown") {
+      const unknown = vid === "__unknown", name = unknown ? "Unknown – " + nm.value.trim() : $("#nv-name").value.trim(); if (!name) { b.disabled = false; msg.textContent = "Give the new variety a name."; return }
       vid = slug(name); while (M.varieties[vid] || FILES.has(`/varieties/${vid}.json`)) vid = slug(name) + "-" + rid(3);
-      const ch = parseInt($("#nv-chill").value, 10);
-      const v = { id: vid, type: "variety", name, group: $("#nv-group").value, plantType: $("#nv-type").value.trim() || undefined, chillHours: isFinite(ch) ? { text: ch + " hr", range: { min: ch, max: ch } } : undefined, pollination: $("#nv-poll").value.trim() || undefined, sources: $("#nv-src").value.trim() ? [{ url: $("#nv-src").value.trim() }] : [], createdAt: now };
+      const like = unknown ? null : M.varieties[$("#nv-like").value];
+      const v = like ? Object.fromEntries(["group", "plantType", "species", "chillHours", "frost", "soil", "npkTarget", "nitrogenLbPerYear", "feedingGuidance", "pollination"].filter(k => like[k] != null).map(k => [k, clone(like[k])])) : {};
+      Object.assign(v, { id: vid, type: "variety", name });
+      if (!unknown) { v.group = $("#nv-group").value; if ($("#nv-type").value.trim()) v.plantType = $("#nv-type").value.trim(); const ch = parseInt($("#nv-chill").value, 10); if (isFinite(ch)) v.chillHours = { text: ch + " hr", range: { min: ch, max: ch } }; if ($("#nv-poll").value.trim()) v.pollination = $("#nv-poll").value.trim() } else v.group = "Other";
+      v.sources = $("#nv-src").value.trim() && !unknown ? [{ url: $("#nv-src").value.trim() }] : [];
+      if (like) v.basedOn = like.id;
+      v.needsDetails = { note: unknown ? "Variety not known yet. Identify it (nursery tag, receipt, fruit), then fill in its facts." : like ? `Care facts copied from ${like.name} as a placeholder. Check chill, harvest, frost, pollination and feeding for this variety, and add a source.` : "New variety: chill, harvest, frost, pollination, soil and feeding still to fill in, with a source.", at: now, by: ME() };
+      v.createdAt = now;
       await saveRecord(`/varieties/${vid}.json`, JSON.parse(JSON.stringify(v)), [{ created: "variety" }]);
     }
     const name = nm.value.trim() || (M.varieties[vid] || {}).name || "New tree";
@@ -1964,6 +1998,7 @@ function renderNew() {
     p.careNotes = $("#n-notes").value.trim(); p.programIds = programIds;
     if ($("#n-noslurry").checked) p.overrides = { slurry: { use: false, reason: src && src.overrides && src.overrides.slurry ? src.overrides.slurry.reason : "No slurry for this planting." } };
     if (d.copyOf) p.copiedFrom = d.copyOf;
+    if (isLater) p.needsDetails = { note: laterNote || "Added in the field; details to fill in (variety, age, planted date, harvest, plans).", at: now, by: ME() };
     p.locations = (newDraft && newDraft.loc) ? [{ id: locId(), lat: +newDraft.loc.lat.toFixed(7), lon: +newDraft.loc.lon.toFixed(7), label: name, source: newDraft.loc.source, ...(newDraft.loc.acc != null ? { accuracyM: Math.round(newDraft.loc.acc * 10) / 10 } : {}), at: now, by: ME() }] : [];
     p.createdAt = now;
     await saveRecord(`/plantings/${pid}.json`, JSON.parse(JSON.stringify(p)), [{ created: "planting", copiedFrom: d.copyOf || null }]);
